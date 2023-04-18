@@ -192,6 +192,7 @@ export function Quiz() {
   });
 
   const onPan = Gesture.Pan()
+    .activateAfterLongPress(200)
     .onUpdate((event) => {
       const questionCardMovedToLeft = event.translationX < 0;
 
