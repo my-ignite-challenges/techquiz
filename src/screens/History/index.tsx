@@ -1,11 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  Pressable,
-} from "react-native";
+import { View, ScrollView, Alert } from "react-native";
 
 import { useNavigation } from "@react-navigation/native";
 import { HouseLine, Trash } from "phosphor-react-native";

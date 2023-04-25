@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { Alert, Text, View } from "react-native";
 
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { Alert, Text, View } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+
 import Animated, {
   Easing,
   Extrapolate,
@@ -14,24 +16,25 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import { Loading } from "../../components/Loading";
-import { Question } from "../../components/Question";
-import { QuizHeader } from "../../components/QuizHeader";
 import { ConfirmButton } from "../../components/ConfirmButton";
+import { FeedbackOverlay } from "../../components/FeedbackOverlay";
+import { Loading } from "../../components/Loading";
 import { OutlineButton } from "../../components/OutlineButton";
 import { ProgressBar } from "../../components/ProgressBar";
+import { Question } from "../../components/Question";
+import { QuizHeader } from "../../components/QuizHeader";
+
 import { QUIZ } from "../../data/quiz";
 
 import { historyAdd } from "../../storage/quizHistoryStorage";
 import { THEME } from "../../styles/theme";
 import { styles } from "./styles";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
 
 interface Params {
   id: string;
 }
 
-type QuizProps = typeof QUIZ[0];
+type QuizProps = (typeof QUIZ)[0];
 
 export function Quiz() {
   const [points, setPoints] = useState(0);
@@ -39,6 +42,7 @@ export function Quiz() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [quiz, setQuiz] = useState<QuizProps>({} as QuizProps);
   const [selectedAnswer, setSelectedAnswer] = useState<null | number>(null);
+  const [answerStatus, setAnswerStatus] = useState(0);
 
   const { navigate } = useNavigation();
 
@@ -152,14 +156,15 @@ export function Quiz() {
     }
 
     if (quiz.questions[currentQuestion].correct === selectedAnswer) {
+      setAnswerStatus(1);
       setPoints((prevState) => prevState + 1);
+      handleNextQuestion();
     } else {
+      setAnswerStatus(2);
       shakeWrongAnswerCard();
     }
 
     setSelectedAnswer(null);
-
-    handleNextQuestion();
   }
 
   function handleStop() {
@@ -181,7 +186,12 @@ export function Quiz() {
   function shakeWrongAnswerCard() {
     shake.value = withSequence(
       withTiming(3, { duration: 400, easing: Easing.bounce }),
-      withTiming(0)
+      withTiming(0, undefined, (finished) => {
+        "worklet";
+        if (finished) {
+          runOnJS(handleNextQuestion)();
+        }
+      })
     );
   }
 
@@ -221,6 +231,7 @@ export function Quiz() {
 
   return (
     <View style={styles.container}>
+      <FeedbackOverlay answerStatus={answerStatus} />
       <Animated.View style={fixedProgressBarAnimatedStyle}>
         <Text style={styles.fixedProgressBarTitle}>{quiz.title}</Text>
         <ProgressBar
@@ -252,6 +263,7 @@ export function Quiz() {
               question={quiz.questions[currentQuestion]}
               selectedAnswer={selectedAnswer}
               setSelectedAnswer={setSelectedAnswer}
+              onAnimationEnd={() => setAnswerStatus(0)}
             />
           </Animated.View>
         </GestureDetector>

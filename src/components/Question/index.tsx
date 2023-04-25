@@ -1,6 +1,6 @@
 import { Dimensions, Text } from "react-native";
 
-import Animated, { Keyframe } from "react-native-reanimated";
+import Animated, { Keyframe, runOnJS } from "react-native-reanimated";
 
 import { Option } from "../Option";
 import { styles } from "./styles";
@@ -14,12 +14,14 @@ type Props = {
   question: QuestionProps;
   selectedAnswer?: number | null;
   setSelectedAnswer?: (value: number) => void;
+  onAnimationEnd: () => void;
 };
 
 export function Question({
   question,
   selectedAnswer,
   setSelectedAnswer,
+  onAnimationEnd,
 }: Props) {
   const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -62,7 +64,12 @@ export function Question({
     <Animated.View
       style={styles.container}
       entering={enteringKeyframe.duration(400)}
-      exiting={exitingKeyframe.duration(400)}
+      exiting={exitingKeyframe.duration(400).withCallback((finished) => {
+        "worklet";
+        if (finished) {
+          runOnJS(onAnimationEnd)();
+        }
+      })}
     >
       <Text style={styles.title}>{question.title}</Text>
 
